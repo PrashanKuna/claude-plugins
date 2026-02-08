@@ -33,11 +33,10 @@ else
     chown "$CURRENT_USER" "$PROFILE"
 fi
 
-# Only add if not already present
-if grep -q "GOOGLE_OAUTH_CLIENT_ID" "$PROFILE" 2>/dev/null; then
-    echo "Google OAuth env vars already configured in $PROFILE — skipping."
-    exit 0
-fi
+# Remove any existing Google OAuth vars (so we always apply the latest values)
+sed -i '' '/GOOGLE_OAUTH_CLIENT_ID/d' "$PROFILE"
+sed -i '' '/GOOGLE_OAUTH_CLIENT_SECRET/d' "$PROFILE"
+sed -i '' '/Google Workspace MCP.*OAuth/d' "$PROFILE"
 
 # Append credentials
 cat >> "$PROFILE" << EOF

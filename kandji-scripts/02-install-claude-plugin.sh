@@ -45,6 +45,14 @@ fi
 
 echo "Found Claude Code at: $CLAUDE_BIN"
 
+# --- Install uv (required to run the Google Workspace MCP server) ---
+if ! command -v /opt/homebrew/bin/uv &> /dev/null && ! command -v /usr/local/bin/uv &> /dev/null; then
+    echo "Installing uv via Homebrew..."
+    sudo -u "$CURRENT_USER" bash -lc "brew install uv 2>&1"
+else
+    echo "uv already installed"
+fi
+
 # Run as the actual user (not root)
 sudo -u "$CURRENT_USER" bash -lc "
     '$CLAUDE_BIN' plugin marketplace add PrashanKuna/claude-plugins 2>&1

@@ -1,0 +1,13 @@
+{
+  "extraKnownMarketplaces": {
+    "ada-tools": {
+      "source": {
+        "source": "github",
+        "repo": "PrashanKuna/claude-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "google-workspace-mcp@ada-tools": true
+  }
+}

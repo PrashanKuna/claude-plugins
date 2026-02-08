@@ -1,0 +1,24 @@
+{
+  "name": "ada-tools",
+  "owner": {
+    "name": "Ada Platform Team"
+  },
+  "metadata": {
+    "description": "Internal Claude Code plugins for the Ada team",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "google-workspace-mcp",
+      "source": "./plugins/google-workspace-mcp",
+      "description": "Google Workspace MCP — Gmail, Calendar, Drive, Docs, Sheets, and more",
+      "version": "1.10.0",
+      "author": {
+        "name": "Prashan Kuna"
+      },
+      "category": "integrations",
+      "tags": ["google", "workspace", "gmail", "calendar", "drive"]
+    }
+  ]
+}

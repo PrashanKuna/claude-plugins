@@ -1,0 +1,21 @@
+{
+  "name": "google-workspace-mcp",
+  "version": "1.10.0",
+  "description": "Google Workspace MCP — Gmail, Calendar, Drive, Docs, Sheets, Chat, Forms, Slides, Tasks, Contacts, and more",
+  "author": {
+    "name": "Prashan Kuna"
+  },
+  "repository": "https://github.com/PrashanKuna/google_workspace_mcp",
+  "license": "MIT",
+  "keywords": ["google", "workspace", "gmail", "calendar", "drive", "docs", "sheets", "mcp"],
+  "mcpServers": {
+    "google-workspace": {
+      "command": "uvx",
+      "args": ["workspace-mcp", "--tool-tier", "core"],
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "${GOOGLE_OAUTH_CLIENT_ID}",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "${GOOGLE_OAUTH_CLIENT_SECRET}"
+      }
+    }
+  }
+}

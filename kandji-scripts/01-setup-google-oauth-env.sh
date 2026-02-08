@@ -1,14 +1,10 @@
 #!/bin/bash
 ###############################################################################
 # Google Workspace MCP — OAuth Environment Variables
-# Deploy via Kandji as a Custom Script (run once per user)
+# Deploy via Kandji as a Custom Script
 #
-# What this does:
-#   Adds the shared Google OAuth credentials to the user's shell profile
-#   so Claude Code can connect to Google Workspace APIs.
-#
-# BEFORE DEPLOYING: Replace the placeholder values below with your actual
-# Google OAuth Client ID and Client Secret from Google Cloud Console.
+# BEFORE DEPLOYING: Replace the placeholder values on lines 14-15 with your
+# actual Google OAuth Client ID and Client Secret from Google Cloud Console.
 ###############################################################################
 
 # ============================================================================
@@ -18,27 +14,58 @@ GOOGLE_CLIENT_ID="PASTE_YOUR_CLIENT_ID_HERE.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="PASTE_YOUR_CLIENT_SECRET_HERE"
 # ============================================================================
 
-# Detect the current user (Kandji runs as root, so we need the logged-in user)
-CURRENT_USER=$(stat -f "%Su" /dev/console 2>/dev/null || echo "$USER")
-USER_HOME=$(eval echo "~$CURRENT_USER")
+LOG_PREFIX="[GoogleMCP]"
 
-# Determine shell profile file
-if [ -f "$USER_HOME/.zshrc" ]; then
-    PROFILE="$USER_HOME/.zshrc"
-elif [ -f "$USER_HOME/.bashrc" ]; then
-    PROFILE="$USER_HOME/.bashrc"
-else
-    PROFILE="$USER_HOME/.zshrc"
-    touch "$PROFILE"
-    chown "$CURRENT_USER" "$PROFILE"
+# --- Detect the logged-in user ---
+# Try multiple methods since Kandji runs as root
+CURRENT_USER=""
+
+# Method 1: Console user
+CURRENT_USER=$(stat -f "%Su" /dev/console 2>/dev/null)
+
+# Method 2: scutil (more reliable on newer macOS)
+if [ -z "$CURRENT_USER" ] || [ "$CURRENT_USER" = "root" ]; then
+    CURRENT_USER=$(scutil <<< "show State:/Users/ConsoleUser" | awk '/Name :/ { print $3 }' 2>/dev/null)
 fi
 
-# Remove any existing Google OAuth vars (so we always apply the latest values)
+# Method 3: Last logged-in user
+if [ -z "$CURRENT_USER" ] || [ "$CURRENT_USER" = "root" ] || [ "$CURRENT_USER" = "loginwindow" ]; then
+    CURRENT_USER=$(last -1 -t ttys000 2>/dev/null | head -1 | awk '{print $1}')
+fi
+
+# Bail if we still can't find a real user
+if [ -z "$CURRENT_USER" ] || [ "$CURRENT_USER" = "root" ] || [ "$CURRENT_USER" = "loginwindow" ]; then
+    echo "$LOG_PREFIX ERROR: Could not detect logged-in user. Exiting."
+    exit 1
+fi
+
+USER_HOME=$(dscl . -read /Users/"$CURRENT_USER" NFSHomeDirectory 2>/dev/null | awk '{print $2}')
+if [ -z "$USER_HOME" ]; then
+    USER_HOME="/Users/$CURRENT_USER"
+fi
+
+echo "$LOG_PREFIX Detected user: $CURRENT_USER"
+echo "$LOG_PREFIX Home directory: $USER_HOME"
+
+# --- Determine shell profile ---
+PROFILE="$USER_HOME/.zshrc"
+if [ ! -f "$PROFILE" ]; then
+    if [ -f "$USER_HOME/.bashrc" ]; then
+        PROFILE="$USER_HOME/.bashrc"
+    else
+        touch "$PROFILE"
+        chown "$CURRENT_USER" "$PROFILE"
+    fi
+fi
+
+echo "$LOG_PREFIX Using profile: $PROFILE"
+
+# --- Remove any existing Google OAuth vars ---
 sed -i '' '/GOOGLE_OAUTH_CLIENT_ID/d' "$PROFILE"
 sed -i '' '/GOOGLE_OAUTH_CLIENT_SECRET/d' "$PROFILE"
 sed -i '' '/Google Workspace MCP.*OAuth/d' "$PROFILE"
 
-# Append credentials
+# --- Write the credentials ---
 cat >> "$PROFILE" << EOF
 
 # Google Workspace MCP — OAuth credentials (deployed by IT)
@@ -46,8 +73,15 @@ export GOOGLE_OAUTH_CLIENT_ID="$GOOGLE_CLIENT_ID"
 export GOOGLE_OAUTH_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
 EOF
 
-# Fix ownership (since Kandji may run as root)
+# --- Fix ownership ---
 chown "$CURRENT_USER" "$PROFILE"
 
-echo "Google OAuth env vars added to $PROFILE for user $CURRENT_USER"
+# --- Verify it worked ---
+if grep -q "$GOOGLE_CLIENT_ID" "$PROFILE" 2>/dev/null; then
+    echo "$LOG_PREFIX SUCCESS: OAuth env vars written to $PROFILE"
+else
+    echo "$LOG_PREFIX ERROR: Failed to write env vars to $PROFILE"
+    exit 1
+fi
+
 exit 0

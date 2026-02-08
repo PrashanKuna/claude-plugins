@@ -11,7 +11,11 @@
   "mcpServers": {
     "google-workspace": {
       "command": "uvx",
-      "args": ["workspace-mcp", "--tool-tier", "core"]
+      "args": ["workspace-mcp", "--tool-tier", "core"],
+      "env": {
+        "GOOGLE_OAUTH_CLIENT_ID": "1090533541631-0sipkptjv7gat4vvsiq8elihmuhkaab7.apps.googleusercontent.com",
+        "GOOGLE_OAUTH_CLIENT_SECRET": "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"
+      }
     }
   }
 }

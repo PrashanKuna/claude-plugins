@@ -47,23 +47,29 @@ fi
 echo "$LOG_PREFIX Detected user: $CURRENT_USER"
 echo "$LOG_PREFIX Home directory: $USER_HOME"
 
-# --- Determine shell profile ---
-PROFILE="$USER_HOME/.zshrc"
+# --- Use .zshenv (loaded by ALL shell types, including non-interactive) ---
+# .zshrc only loads for interactive shells, which Claude Code may not use.
+# .zshenv is always loaded, so env vars are available everywhere.
+PROFILE="$USER_HOME/.zshenv"
 if [ ! -f "$PROFILE" ]; then
-    if [ -f "$USER_HOME/.bashrc" ]; then
-        PROFILE="$USER_HOME/.bashrc"
-    else
-        touch "$PROFILE"
-        chown "$CURRENT_USER" "$PROFILE"
-    fi
+    touch "$PROFILE"
+    chown "$CURRENT_USER" "$PROFILE"
 fi
 
 echo "$LOG_PREFIX Using profile: $PROFILE"
 
-# --- Remove any existing Google OAuth vars ---
+# --- Remove any existing Google OAuth vars from .zshenv AND .zshrc ---
 sed -i '' '/GOOGLE_OAUTH_CLIENT_ID/d' "$PROFILE"
 sed -i '' '/GOOGLE_OAUTH_CLIENT_SECRET/d' "$PROFILE"
 sed -i '' '/Google Workspace MCP.*OAuth/d' "$PROFILE"
+
+# Also clean up .zshrc if it has old values from a previous deployment
+ZSHRC="$USER_HOME/.zshrc"
+if [ -f "$ZSHRC" ]; then
+    sed -i '' '/GOOGLE_OAUTH_CLIENT_ID/d' "$ZSHRC"
+    sed -i '' '/GOOGLE_OAUTH_CLIENT_SECRET/d' "$ZSHRC"
+    sed -i '' '/Google Workspace MCP.*OAuth/d' "$ZSHRC"
+fi
 
 # --- Write the credentials ---
 cat >> "$PROFILE" << EOF
